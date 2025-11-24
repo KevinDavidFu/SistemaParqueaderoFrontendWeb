@@ -1,0 +1,17 @@
+{
+  "name": "sistema-parqueadero-frontend-web",
+  "version": "1.0.0",
+  "description": "Frontend web moderno para Sistema de Parqueadero que consume API REST",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["parking", "frontend", "vanilla-js", "api-rest"],
+  "author": "Kevin David",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

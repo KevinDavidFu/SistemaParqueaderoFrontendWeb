@@ -1,0 +1,76 @@
+/* Responsive Design */
+
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 1.5rem;
+  }
+
+  .nav {
+    flex-direction: column;
+  }
+
+  .nav-btn {
+    width: 100%;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .toast {
+    right: 1rem;
+    left: 1rem;
+    min-width: auto;
+  }
+
+  .modal {
+    width: 95%;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 15px;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .price {
+    font-size: 1.5rem;
+  }
+
+  .cobro-result {
+    padding: 1rem;
+  }
+}
