@@ -17,6 +17,30 @@ class VehiculoService {
     }
   }
 
+  async obtenerPorId(id) {
+    try {
+      const response = await fetch(`${this.baseUrl}?id=${id}`);
+      if (!response.ok) throw new Error('Error al obtener vehículo');
+      const data = await response.json();
+      return data.success ? data.data : null;
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+
+  async obtenerPorPlaca(placa) {
+    try {
+      const response = await fetch(`${this.baseUrl}?placa=${placa}`);
+      if (!response.ok) throw new Error('Error al obtener vehículo');
+      const data = await response.json();
+      return data.success ? data.data : null;
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+
   async registrar(vehiculo) {
     try {
       const formData = new URLSearchParams();
@@ -33,6 +57,34 @@ class VehiculoService {
       });
 
       if (!response.ok) throw new Error('Error al registrar vehículo');
+      return await response.json();
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+
+  async actualizar(id, vehiculo) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('id', id);
+      
+      if (vehiculo.modelo !== undefined) {
+        formData.append('modelo', vehiculo.modelo);
+      }
+      
+      if (vehiculo.tipo !== undefined) {
+        formData.append('tipo', vehiculo.tipo);
+      }
+
+      const response = await fetch(`${this.baseUrl}?${formData.toString()}`, {
+        method: HTTP_METHODS.PUT,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      if (!response.ok) throw new Error('Error al actualizar vehículo');
       return await response.json();
     } catch (error) {
       console.error('Error:', error);

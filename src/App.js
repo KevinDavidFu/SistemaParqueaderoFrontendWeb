@@ -95,6 +95,10 @@ class App {
     }
   }
 
+  // ========================================
+  // VEHÍCULOS
+  // ========================================
+  
   renderVehiculos(content) {
     content.innerHTML = `
       <div class="section-header">
@@ -119,7 +123,7 @@ class App {
                   <th>Acciones</th>
                 </tr>
               </thead>
-              <tbody id="vehiculosTableBody">
+              <tbody>
                 ${this.renderVehiculosRows()}
               </tbody>
             </table>
@@ -152,6 +156,9 @@ class App {
           </span>
         </td>
         <td>
+          <button class="btn btn-sm btn-primary" data-action="edit" data-id="${v.id}" style="margin-right: 0.5rem;">
+            Editar
+          </button>
           <button class="btn btn-sm btn-danger" data-action="delete" data-placa="${v.placa}">
             Eliminar
           </button>
@@ -161,6 +168,13 @@ class App {
   }
 
   attachVehiculoActions() {
+    document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        this.showVehiculoEditForm(id);
+      });
+    });
+
     document.querySelectorAll('[data-action="delete"]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const placa = e.target.dataset.placa;
@@ -224,6 +238,57 @@ class App {
     });
   }
 
+  async showVehiculoEditForm(id) {
+    try {
+      const vehiculo = await vehiculoService.obtenerPorId(id);
+      if (!vehiculo) {
+        toast.error('Vehículo no encontrado');
+        return;
+      }
+
+      const formHtml = `
+        <form id="vehiculoEditForm">
+          <div class="form-group">
+            <label>Placa</label>
+            <input type="text" class="form-control" value="${vehiculo.placa}" disabled>
+          </div>
+          <div class="form-group">
+            <label>Modelo</label>
+            <input type="text" class="form-control" id="modelo" value="${vehiculo.modelo || ''}">
+          </div>
+          <div class="form-group">
+            <label>Tipo</label>
+            <select class="form-control" id="tipo">
+              ${this.tarifas.map(t => 
+                `<option value="${t.tipo}" ${t.tipo === vehiculo.tipo ? 'selected' : ''}>${t.tipo}</option>`
+              ).join('')}
+            </select>
+          </div>
+        </form>
+      `;
+
+      modal.show('Editar Vehículo', formHtml, async () => {
+        const modelo = document.getElementById('modelo').value;
+        const tipo = document.getElementById('tipo').value;
+
+        try {
+          await vehiculoService.actualizar(id, { modelo, tipo });
+          toast.success('Vehículo actualizado correctamente');
+          this.vehiculos = await vehiculoService.listarTodos();
+          this.renderView();
+        } catch (error) {
+          toast.error('Error al actualizar vehículo');
+        }
+      });
+    } catch (error) {
+      toast.error('Error al cargar vehículo');
+    }
+  }
+
+  // ========================================
+  // TARIFAS
+  // ========================================
+  
   renderTarifas(content) {
     content.innerHTML = `
       <div class="section-header">
@@ -240,6 +305,14 @@ class App {
               <span class="badge ${t.activa ? 'badge-success' : 'badge-secondary'}">
                 ${t.activa ? 'Activa' : 'Inactiva'}
               </span>
+              <div style="margin-top: 1rem;">
+                <button class="btn btn-sm btn-primary" data-action="editTarifa" data-id="${t.id}" style="margin-right: 0.5rem;">
+                  Editar
+                </button>
+                <button class="btn btn-sm btn-danger" data-action="deleteTarifa" data-id="${t.id}">
+                  Eliminar
+                </button>
+              </div>
             </div>
           </div>
         `).join('')}
@@ -248,6 +321,37 @@ class App {
 
     document.getElementById('btnNuevaTarifa').addEventListener('click', () => {
       this.showTarifaForm();
+    });
+
+    this.attachTarifaActions();
+  }
+
+  attachTarifaActions() {
+    document.querySelectorAll('[data-action="editTarifa"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        this.showTarifaEditForm(id);
+      });
+    });
+
+    document.querySelectorAll('[data-action="deleteTarifa"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        modal.confirm(
+          'Confirmar Eliminación',
+          '¿Está seguro de eliminar esta tarifa?',
+          async () => {
+            try {
+              await tarifaService.eliminar(id);
+              toast.success('Tarifa eliminada correctamente');
+              this.tarifas = await tarifaService.listarTodas();
+              this.renderView();
+            } catch (error) {
+              toast.error('Error al eliminar tarifa');
+            }
+          }
+        );
+      });
     });
   }
 
@@ -286,6 +390,62 @@ class App {
     });
   }
 
+  async showTarifaEditForm(id) {
+    try {
+      const tarifa = await tarifaService.obtenerPorId(id);
+      if (!tarifa) {
+        toast.error('Tarifa no encontrada');
+        return;
+      }
+
+      const formHtml = `
+        <form id="tarifaEditForm">
+          <div class="form-group">
+            <label>Tipo de Vehículo</label>
+            <input type="text" class="form-control" value="${tarifa.tipo}" disabled>
+          </div>
+          <div class="form-group">
+            <label>Precio por Hora (COP) *</label>
+            <input type="number" class="form-control" id="precioPorHora" value="${tarifa.precioPorHora}" min="0" step="100" required>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select class="form-control" id="activa">
+              <option value="true" ${tarifa.activa ? 'selected' : ''}>Activa</option>
+              <option value="false" ${!tarifa.activa ? 'selected' : ''}>Inactiva</option>
+            </select>
+          </div>
+        </form>
+      `;
+
+      modal.show('Editar Tarifa', formHtml, async () => {
+        const precioPorHora = document.getElementById('precioPorHora').value;
+        const activa = document.getElementById('activa').value === 'true';
+
+        const validation = validatePrecio(precioPorHora);
+        if (!validation.valid) {
+          toast.error(validation.message);
+          return;
+        }
+
+        try {
+          await tarifaService.actualizar(id, { precioPorHora, activa });
+          toast.success('Tarifa actualizada correctamente');
+          this.tarifas = await tarifaService.listarTodas();
+          this.renderView();
+        } catch (error) {
+          toast.error('Error al actualizar tarifa');
+        }
+      });
+    } catch (error) {
+      toast.error('Error al cargar tarifa');
+    }
+  }
+
+  // ========================================
+  // CLIENTES
+  // ========================================
+  
   renderClientes(content) {
     content.innerHTML = `
       <div class="section-header">
@@ -318,6 +478,9 @@ class App {
                     <td><span class="badge badge-info">${c.tipoCliente}</span></td>
                     <td>${c.descuento}%</td>
                     <td>
+                      <button class="btn btn-sm btn-primary" data-action="editCliente" data-id="${c.id}" style="margin-right: 0.5rem;">
+                        Editar
+                      </button>
                       <button class="btn btn-sm btn-danger" data-action="deleteCliente" data-id="${c.id}">
                         Eliminar
                       </button>
@@ -333,6 +496,17 @@ class App {
 
     document.getElementById('btnNuevoCliente').addEventListener('click', () => {
       this.showClienteForm();
+    });
+
+    this.attachClienteActions();
+  }
+
+  attachClienteActions() {
+    document.querySelectorAll('[data-action="editCliente"]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.target.dataset.id;
+        this.showClienteEditForm(id);
+      });
     });
 
     document.querySelectorAll('[data-action="deleteCliente"]').forEach(btn => {
@@ -407,6 +581,74 @@ class App {
     });
   }
 
+  async showClienteEditForm(id) {
+    try {
+      const cliente = await clienteService.obtenerPorId(id);
+      if (!cliente) {
+        toast.error('Cliente no encontrado');
+        return;
+      }
+
+      const formHtml = `
+        <form id="clienteEditForm">
+          <div class="form-group">
+            <label>Nombre *</label>
+            <input type="text" class="form-control" id="nombre" value="${cliente.nombre}" required>
+          </div>
+          <div class="form-group">
+            <label>Documento</label>
+            <input type="text" class="form-control" value="${cliente.documento}" disabled>
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" class="form-control" id="telefono" value="${cliente.telefono || ''}">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" class="form-control" id="email" value="${cliente.email || ''}">
+          </div>
+          <div class="form-group">
+            <label>Tipo</label>
+            <select class="form-control" id="tipoCliente">
+              <option value="Eventual" ${cliente.tipoCliente === 'Eventual' ? 'selected' : ''}>Eventual</option>
+              <option value="Regular" ${cliente.tipoCliente === 'Regular' ? 'selected' : ''}>Regular</option>
+              <option value="VIP" ${cliente.tipoCliente === 'VIP' ? 'selected' : ''}>VIP</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descuento (%)</label>
+            <input type="number" class="form-control" id="descuento" value="${cliente.descuento}" min="0" max="100">
+          </div>
+        </form>
+      `;
+
+      modal.show('Editar Cliente', formHtml, async () => {
+        const clienteActualizado = {
+          nombre: document.getElementById('nombre').value,
+          telefono: document.getElementById('telefono').value,
+          email: document.getElementById('email').value,
+          tipoCliente: document.getElementById('tipoCliente').value,
+          descuento: document.getElementById('descuento').value
+        };
+
+        try {
+          await clienteService.actualizar(id, clienteActualizado);
+          toast.success('Cliente actualizado correctamente');
+          this.clientes = await clienteService.listarTodos();
+          this.renderView();
+        } catch (error) {
+          toast.error('Error al actualizar cliente');
+        }
+      });
+    } catch (error) {
+      toast.error('Error al cargar cliente');
+    }
+  }
+
+  // ========================================
+  // COBRO
+  // ========================================
+  
   renderCobro(content) {
     content.innerHTML = `
       <div class="section-header">
