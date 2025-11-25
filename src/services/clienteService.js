@@ -81,10 +81,7 @@ class ClienteService {
       }
 
       const response = await fetch(`${this.baseUrl}?${formData.toString()}`, {
-        method: HTTP_METHODS.PUT,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        method: HTTP_METHODS.PUT
       });
 
       if (!response.ok) throw new Error('Error al actualizar cliente');
